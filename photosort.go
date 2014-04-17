@@ -85,31 +85,63 @@ func ParseYearMonthDay(tags *exif.Exif) (string, error) {
 // Check that a directory already exists in our cache. Using a cache to store
 // already created directories removes the need to make a system call to check
 // that the directory exists every time.
-func CheckDir(dest string, dirs []string) []string {
-	// Search for dest in our slice of strings
-	index := sort.SearchStrings(dirs, dest)
-	if index < len(dirs) && dirs[index] == dest {
+func CheckDir(dest string, dirs *[]string) {
+	// We need to index into dirs so we need to dereference early
+	tmp := *dirs
+
+	index := sort.SearchStrings(tmp, dest)
+	if index < len(tmp) && tmp[index] == dest {
 		// found it
-		return dirs
+		return
 	} else {
 		fmt.Println("Directory not in cache:", dest)
 		err := os.MkdirAll(dest, 0755)
 		if err != nil {
 			panic(err)
 		}
-				// Insert: https://code.google.com/p/go-wiki/wiki/SliceTricks
+		// Insert: https://code.google.com/p/go-wiki/wiki/SliceTricks
 		// This code uses the append function to grow the slice by 1 element
 		// and has the side effect of growing the underlying array if neccessary
-		dirs = append(dirs, dest)
-		copy(dirs[index+1:], dirs[index:])
-		dirs[index] = dest
+		tmp = append(tmp, dest)
+		copy(tmp[index+1:], tmp[index:])
+		tmp[index] = dest
+
+		// Update the dirs pointer
+		*dirs = tmp
 	}
-	return dirs
+}
+
+func ProcessPhoto (filepath string, destpath *string, dirs *[]string) {
+	fmt.Println("Processing file: ", filepath)
+
+	tags, err := GetTags(&filepath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error while reading tags from %s: %s", filepath, err)
+	}
+
+	date, err := ParseYearMonthDay(tags)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not parse date from %s: %s", filepath, err)
+	}
+
+	// Check to make sure the directory exists. If not create it
+	destination := path.Join(*destpath, date)
+	CheckDir(destination, dirs)
+
+	extention := path.Ext(filepath)
+
+	hash, err := GetMd5(&filepath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error calculating md5 for %s: %s", filepath, err)
+	}
+
+	filename := fmt.Sprintf("%X%s", hash, strings.ToLower(extention))
+	fmt.Println("Copying file to: ", path.Join(destination, filename))
 }
 
 func main() {
 	// Process our command line args
-	var destpath = flag.String("destpath", ".", "Destination directory for Photos")
+	var destpath = flag.String("destpath", ".", "Destination directory for Sorted Photos")
 	flag.Parse()
 	args := flag.Args()
 
@@ -117,31 +149,7 @@ func main() {
 	// so we do not need to make a system call for each picture.
 	var dirs []string
 
-	for _, filepath := range args {
-		fmt.Println("Processing file: ", filepath)
-
-		tags, err := GetTags(&filepath)
-		if err != nil {
-			panic(err)
-		}
-
-		date, err := ParseYearMonthDay(tags)
-		if err != nil {
-			panic(err)
-		}
-
-		// Check to make sure the directory exists. If not create it
-		destination := path.Join(*destpath, date)
-		dirs = CheckDir(destination, dirs)
-
-		extention := path.Ext(filepath)
-
-		hash, err := GetMd5(&filepath)
-		if err != nil {
-			panic(err)
-		}
-
-		filename := fmt.Sprintf("%X%s", hash, strings.ToLower(extention))
-		fmt.Println("Copying file to: ", path.Join(destination, filename))
+	for _, arg := range args {
+		ProcessPhoto(arg, destpath, &dirs)
 	}
 }
