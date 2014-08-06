@@ -10,7 +10,7 @@ import (
 )
 
 type ImageObj struct {
-	FileObj
+	*FileObj
 }
 
 func (i *ImageObj) getTags() (*exif.Exif, error) {

@@ -5,7 +5,10 @@ import (
 )
 
 type Cache struct {
-	data sort.StringSlice
+	data      sort.StringSlice
+	duplicate int
+	failure   int
+	success   int
 }
 
 func (c *Cache) IsCached(s string) (bool, int) {

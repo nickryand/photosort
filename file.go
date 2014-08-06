@@ -19,12 +19,28 @@ type File interface {
 	GetFileName() string
 	IsCached(string) (bool, int)
 	AddToCache(string, int)
+	IncDup()
+	IncFail()
+	IncSuccess()
 }
 
 type FileObj struct {
 	destpath string
 	filename string
+	other    string
 	cache    *Cache
+}
+
+func (f *FileObj) IncDup() {
+	f.cache.duplicate++
+}
+
+func (f *FileObj) IncFail() {
+	f.cache.failure++
+}
+
+func (f *FileObj) IncSuccess() {
+	f.cache.success++
 }
 
 func (f *FileObj) IsCached(s string) (bool, int) {
@@ -61,7 +77,7 @@ func (f *FileObj) GetMd5() (hash []byte, err error) {
 }
 
 func (f *FileObj) GetDestination() (string, error) {
-	return f.destpath, nil
+	return path.Join(f.destpath, f.other), nil
 }
 
 func CheckDir(f File, directory string) error {
@@ -99,14 +115,16 @@ func CopyFile(f File) error {
 	name := fmt.Sprintf("%X%s", hash, strings.ToLower(extention))
 	destination := path.Join(destdir, name)
 
-	log.Printf("Copying file to: %s", destination)
-
 	// Only copy of the file does not already exist
 	if _, err := os.Stat(destination); os.IsNotExist(err) {
+		log.Printf("Copying file to: %s", destination)
 		if err = fileutils.Cp(f.GetFileName(), destination); err != nil {
+			f.IncFail()
 			return err
 		}
+		f.IncSuccess()
 	} else {
+		f.IncDup()
 		debug.Printf("File %s already exists\n", destination)
 	}
 	return nil

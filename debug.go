@@ -3,7 +3,7 @@ package main
 // https://groups.google.com/forum/#!msg/golang-nuts/gU7oQGoCkmg/BNIl-TqB-4wJ
 import "log"
 
-const debug debugging = true // or flip to false
+const debug debugging = false // or flip to false
 
 type debugging bool
 
