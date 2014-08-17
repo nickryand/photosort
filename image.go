@@ -30,15 +30,14 @@ func (i *ImageObj) getTags() (*exif.Exif, error) {
 
 // Parse the date string from an exif tag and return the year, month and day
 // in the format YYYYMMDD.
-func (i *ImageObj) parseYearMonthDay(tags *exif.Exif) (string, error) {
+func (i *ImageObj) getDatePath(tags *exif.Exif) (string, error) {
 	dateStr, err := tags.Get(exif.DateTimeOriginal)
 	if err != nil {
 		return "", err
 	}
-	dateSlice := strings.Split(dateStr.StringVal(), " ")
+	dateSlice := strings.SplitN(dateStr.StringVal(), ":", 3)
 
-	replacer := strings.NewReplacer(":", "")
-	return replacer.Replace(dateSlice[0]), nil
+	return path.Join(dateSlice[0], dateSlice[1]), nil
 }
 
 func (i *ImageObj) GetDestination() (string, error) {
@@ -47,12 +46,12 @@ func (i *ImageObj) GetDestination() (string, error) {
 	// Set the tags on the struct
 	tags, err := i.getTags()
 	if err != nil {
-		return "", err
+		return path.Join(i.destpath, "image"), nil
 	}
 
-	date, err := i.parseYearMonthDay(tags)
+	date, err := i.getDatePath(tags)
 	if err != nil {
-		return "", err
+		return path.Join(i.destpath, "image"), nil
 	}
 
 	return path.Join(i.destpath, date), nil

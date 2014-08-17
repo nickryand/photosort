@@ -22,13 +22,17 @@ type File interface {
 	IncDup()
 	IncFail()
 	IncSuccess()
+	getDestpath() string
 }
 
 type FileObj struct {
 	destpath string
 	filename string
-	other    string
 	cache    *Cache
+}
+
+func (f *FileObj) getDestpath() string {
+	return f.destpath
 }
 
 func (f *FileObj) IncDup() {
@@ -77,7 +81,7 @@ func (f *FileObj) GetMd5() (hash []byte, err error) {
 }
 
 func (f *FileObj) GetDestination() (string, error) {
-	return path.Join(f.destpath, f.other), nil
+	return f.destpath, nil
 }
 
 func CheckDir(f File, directory string) error {

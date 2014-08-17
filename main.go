@@ -7,21 +7,20 @@ import (
 	"path/filepath"
 )
 
-func ProcessDirectory(dirname, destpath, other string, cache *Cache) {
+func ProcessDirectory(dirname, destpath string, cache *Cache) {
 	walkFn := func(filename string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			ProcessFile(filename, destpath, other, cache)
+			ProcessFile(filename, destpath, cache)
 		}
 		return nil
 	}
 	filepath.Walk(dirname, walkFn)
 }
 
-func ProcessFile(filename, destpath, other string, cache *Cache) {
+func ProcessFile(filename, destpath string, cache *Cache) {
 	file := FileObj{
 		filename: filename,
 		destpath: destpath,
-		other:    other,
 		cache:    cache,
 	}
 
@@ -31,7 +30,7 @@ func ProcessFile(filename, destpath, other string, cache *Cache) {
 		return
 	}
 
-	if err := CopyFile(wrapped); err != nil {
+	if err := CopyFile(wrapped.(File)); err != nil {
 		log.Printf("Error trying to copy file: %s", err)
 	}
 }
@@ -39,7 +38,6 @@ func ProcessFile(filename, destpath, other string, cache *Cache) {
 func main() {
 	// Process our command line args
 	destpath := flag.String("destpath", ".", "Destination directory for Sorted Photos")
-	otherdir := flag.String("other", "other", "Name of directory to store non-image files")
 
 	flag.Parse()
 	args := flag.Args()
@@ -54,9 +52,9 @@ func main() {
 		}
 
 		if info.IsDir() {
-			ProcessDirectory(arg, *destpath, *otherdir, &cache)
+			ProcessDirectory(arg, *destpath, &cache)
 		} else {
-			ProcessFile(arg, *destpath, *otherdir, &cache)
+			ProcessFile(arg, *destpath, &cache)
 		}
 	}
 
