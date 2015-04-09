@@ -31,11 +31,17 @@ func (i *ImageObj) getTags() (*exif.Exif, error) {
 // Parse the date string from an exif tag and return the year, month and day
 // in the format YYYYMMDD.
 func (i *ImageObj) getDatePath(tags *exif.Exif) (string, error) {
-	dateStr, err := tags.Get(exif.DateTimeOriginal)
+	value, err := tags.Get(exif.DateTimeOriginal)
 	if err != nil {
 		return "", err
 	}
-	dateSlice := strings.SplitN(dateStr.StringVal(), ":", 3)
+
+	dateStr, err := value.StringVal()
+	if err != nil {
+		return "", err
+	}
+
+	dateSlice := strings.SplitN(dateStr, ":", 3)
 
 	return path.Join(dateSlice[0], dateSlice[1]), nil
 }

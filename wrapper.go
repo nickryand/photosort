@@ -1,9 +1,9 @@
 package main
 
 import (
+	"os"
 	"path"
 	"strings"
-	"os"
 
 	"github.com/nickryand/magic"
 )
