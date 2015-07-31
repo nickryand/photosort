@@ -6,6 +6,10 @@ format:
 
 build: deps
 	@mkdir -p bin/
+	go build --ldflags '-extldflags "-lz"' -o bin/photosort ./...
+
+buildstatic: deps
+	@mkdir -p bin/
 	go build --ldflags '-extldflags "-static -lz"' -o bin/photosort ./...
 
 deps:
